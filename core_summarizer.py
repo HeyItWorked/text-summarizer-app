@@ -1,6 +1,8 @@
 from openai import OpenAI
+import logging
 
-def summarize_text_openai(api_key, text_to_summarize, summary_style, model="gpt-4o"):
+logging.basicConfig(level=logging.DEBUG)
+def summarize_text_openai(api_key, text_to_summarize, summary_style, desired_length, model="gpt-4o"):
     if not text_to_summarize.strip():
         return "Error: No text provided for summarization."
 
@@ -24,8 +26,9 @@ def summarize_text_openai(api_key, text_to_summarize, summary_style, model="gpt-
                 {"role": "user", "content": f"Please summarize the following text based on the system instruction:\n\n{text_to_summarize}"}
             ],
             temperature=0.7,
-            max_tokens=150
+            max_tokens=desired_length
         )
+        logging.debug(f"Response: {response.usage.completion_tokens}")
         return response.choices[0].message.content.strip()
     except Exception as e:
         return f"Error during summarization: {str(e)}"

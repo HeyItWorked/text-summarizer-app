@@ -14,7 +14,7 @@ st.markdown("""
 API_KEY_NAME_IN_SECRETS = "api_key" # Change if using Google or a different name
 LLM_API_KEY = st.secrets.get(API_KEY_NAME_IN_SECRETS)
 
-logging.debug(f"Value of api_key: {LLM_API_KEY}")
+# logging.debug(f"Value of api_key: {LLM_API_KEY}")
 
 if not LLM_API_KEY:
     st.error(f"API Key not found. Please add it to your .streamlit/secrets.toml file.")
@@ -28,12 +28,14 @@ summary_style = st.radio(
 
 input_text = st.text_area("Enter Text to Summarize:", height=200, placeholder="Paste your text here...")
 
+desired_length  = st.slider("Desired Summarzy Length (approx. tokens):", min_value=10, max_value=300, value=150, step=10)
+
 if st.button("Summarize text", type="primary"):
     if input_text:
         with st.spinner("Summarizing... please wait."):
-            summary = summarize_text_openai(LLM_API_KEY, input_text, 'abstractive' if summary_style == 'Abstractive (Rewrite)' else 'extractive')
+            summary = summarize_text_openai(LLM_API_KEY, input_text, 'abstractive' if summary_style == 'Abstractive (Rewrite)' else 'extractive', desired_length)
         
-        if summary.startswith("Error:"):
+        if summary.startswith("Error"):
             st.error(summary)
         else:
             st.subheader("Generated Summary:")
