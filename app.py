@@ -1,6 +1,5 @@
 import streamlit as st
 from core_summarizer import summarize_text_openai
-import tomllib
 
 st.set_page_config(layout="wide", page_title="Text Summarizer AI")
 
@@ -10,19 +9,19 @@ st.markdown("""
     This app uses a Large Language Model to generate summaries.
 """)
 
-with open("secret.toml", "rb") as f:
-    config = tomllib.load(f)
-    key = config["openai"]["api_key"]
-    if not key:
-        st.error(f"API Key ({API_KEY_NAME_IN_SECRETS}) not found. Please add it to your .streamlit/secrets.toml file.")
-        st.stop()
+API_KEY_NAME_IN_SECRETS = "api_key" # Change if using Google or a different name
+LLM_API_KEY = st.secrets.get(API_KEY_NAME_IN_SECRETS)
+
+if not LLM_API_KEY:
+    st.error(f"API Key not found. Please add it to your .streamlit/secrets.toml file.")
+    st.stop()
 
 input_text = st.text_area("Enter Text to Summarize:", height=200, placeholder="Paste your text here...")
 
 if st.button("Summarize text", type="primary"):
     if input_text:
         with st.spinner("Summarizing... please wait."):
-            summary = summarize_text_openai(key, input_text)
+            summary = summarize_text_openai(LLM_API_KEY, input_text)
         st.subheader("Generated Summary:")
         st.markdown(f">{summary}")
     else:
