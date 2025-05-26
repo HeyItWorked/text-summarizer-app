@@ -1,5 +1,9 @@
 from openai import OpenAI
 import logging
+from langchain.text_splitter import CharacterTextSplitter
+from langchain_openai import ChatOpenAI
+from langchain.chains.summarize import load_summarize_chain
+from langchain.prompts import ChatPromptTemplate, HumanMessagePromptTemplate, SystemMessagePromptTemplate
 
 logging.basicConfig(level=logging.DEBUG)
 def summarize_text_openai(api_key, text_to_summarize, summary_style, desired_length, model="gpt-4o"):
@@ -30,5 +34,31 @@ def summarize_text_openai(api_key, text_to_summarize, summary_style, desired_len
         )
         logging.debug(f"Response: {response.usage.completion_tokens}")
         return response.choices[0].message.content.strip()
+    except Exception as e:
+        return f"Error during summarization: {str(e)}"
+
+def summarize_long_text_langchain(api_key, text_to_summarize, desired_length_tokens, summary_style, model_name="gpt-4o"):
+    if not text_to_summarize.strip():
+        return "Error: No text provided for summarization."
+    if summary_style == 'abstractive':
+        system_prompt = "You are a helpful assistant that summarizes text by rewriting it concisely."
+    elif summary_style == 'extractive':
+        system_prompt = "You are a helpful assistant. Extract the most important key sentences from the following text to form a summary. Present them as a list or a coherent paragraph made of these exact sentences."
+    else:
+        # Default or error for unknown style
+        return f"Error: Unknown summary style '{summary_style}'"
+    try:
+        client = ChatOpenAI(api_key=api_key, model_name = model_name, temperature=0.7, max_tokens = desired_length_tokens)
+        text_splitter = CharacterTextSplitter(chunk_size=10000, chunk_overlap=200)
+        docs = text_splitter.create_documents([text_to_summarize])
+        
+        map_prompt_template = ChatPromptTemplate.from_messages([
+            SystemMessagePromptTemplate.from_template(system_prompt),
+            HumanMessagePromptTemplate.from_template("Summarize the following text:\n\n{text}")
+        ])
+        
+        chain = load_summarize_chain(client, chain_type="map_reduce", map_prompt=map_prompt_template)
+        summary = chain.invoke(docs)["output_text"]
+        return summary
     except Exception as e:
         return f"Error during summarization: {str(e)}"

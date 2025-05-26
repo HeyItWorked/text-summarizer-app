@@ -1,8 +1,8 @@
 import streamlit as st
 import logging
-from core_summarizer import summarize_text_openai
+from core_summarizer import summarize_text_openai, summarize_long_text_langchain
 
-# logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.DEBUG)
 st.set_page_config(layout="wide", page_title="Text Summarizer AI")
 
 st.title("📝 Text Summarization App")
@@ -32,9 +32,13 @@ desired_length  = st.slider("Desired Summarzy Length (approx. tokens):", min_val
 
 if st.button("Summarize text", type="primary"):
     if input_text:
+        logging.debug(f"Length of input text: {len(input_text)}")
         with st.spinner("Summarizing... please wait."):
-            summary = summarize_text_openai(LLM_API_KEY, input_text, 'abstractive' if summary_style == 'Abstractive (Rewrite)' else 'extractive', desired_length)
-        
+            if len(input_text) > 300:
+                logging.debug("We're dealing with long text")
+                summary = summarize_long_text_langchain(LLM_API_KEY, input_text,desired_length, 'abstractive' if summary_style == 'Abstractive (Rewrite)' else 'extractive')
+            else:
+                summary = summarize_text_openai(LLM_API_KEY, input_text, 'abstractive' if summary_style == 'Abstractive (Rewrite)' else 'extractive', desired_length)
         if summary.startswith("Error"):
             st.error(summary)
         else:
